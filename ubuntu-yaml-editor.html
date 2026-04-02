@@ -1,0 +1,1356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ubuntu Autoinstall YAML Editor</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #1c2230;
+    --border: #2a3444;
+    --accent: #e95420;
+    --accent2: #f97316;
+    --ubuntu-aubergine: #2c001e;
+    --text: #e6edf3;
+    --text-muted: #7d8590;
+    --text-dim: #4a5568;
+    --green: #3fb950;
+    --blue: #58a6ff;
+    --yellow: #d29922;
+    --red: #f85149;
+    --purple: #bc8cff;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Syne', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+  }
+
+  /* Header */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 58px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 800;
+    font-size: 18px;
+    letter-spacing: -0.5px;
+  }
+
+  .logo-icon {
+    width: 32px; height: 32px;
+    background: var(--accent);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+  }
+
+  .logo span { color: var(--accent); }
+
+  .header-actions { display: flex; gap: 10px; align-items: center; }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 7px 16px;
+    border: none; border-radius: 6px; cursor: pointer;
+    font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 600;
+    transition: all 0.15s; text-decoration: none;
+  }
+
+  .btn-ghost {
+    background: transparent; color: var(--text-muted); border: 1px solid var(--border);
+  }
+  .btn-ghost:hover { background: var(--surface2); color: var(--text); border-color: var(--text-dim); }
+
+  .btn-primary {
+    background: var(--accent); color: white;
+  }
+  .btn-primary:hover { background: var(--accent2); transform: translateY(-1px); }
+
+  .btn-success {
+    background: #1a3a25; color: var(--green); border: 1px solid #2d5a3a;
+  }
+  .btn-success:hover { background: #233f2a; }
+
+  /* Layout */
+  .app-layout {
+    display: grid;
+    grid-template-columns: 280px 1fr 400px;
+    height: calc(100vh - 58px);
+    overflow: hidden;
+  }
+
+  /* Sidebar */
+  .sidebar {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+
+  .sidebar-header {
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+    font-size: 11px; font-weight: 700; letter-spacing: 1.5px;
+    color: var(--text-muted); text-transform: uppercase;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+
+  .sidebar-scroll { flex: 1; overflow-y: auto; padding: 8px; }
+
+  .section-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 12px; border-radius: 6px; cursor: pointer;
+    font-size: 13px; font-weight: 600; color: var(--text-muted);
+    transition: all 0.15s; margin-bottom: 2px;
+    border: 1px solid transparent;
+  }
+
+  .section-item:hover { background: var(--surface2); color: var(--text); }
+  .section-item.active { background: rgba(233, 84, 32, 0.12); color: var(--accent); border-color: rgba(233,84,32,0.25); }
+
+  .section-item .icon { font-size: 15px; width: 20px; text-align: center; }
+  .section-item .badge {
+    margin-left: auto; background: var(--accent); color: white;
+    border-radius: 4px; padding: 1px 6px; font-size: 10px;
+  }
+
+  .section-group-label {
+    padding: 12px 12px 4px;
+    font-size: 10px; font-weight: 700; letter-spacing: 1.5px;
+    color: var(--text-dim); text-transform: uppercase;
+  }
+
+  /* Form Panel */
+  .form-panel {
+    overflow-y: auto;
+    background: var(--bg);
+    padding: 24px;
+  }
+
+  .section-block {
+    display: none;
+  }
+  .section-block.active {
+    display: block;
+    animation: fadeIn 0.2s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .section-title {
+    font-size: 22px; font-weight: 800; letter-spacing: -0.5px;
+    margin-bottom: 6px;
+  }
+
+  .section-desc {
+    font-size: 13px; color: var(--text-muted); margin-bottom: 24px;
+    line-height: 1.5;
+  }
+
+  .field-group {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+
+  .field-group-title {
+    font-size: 12px; font-weight: 700; letter-spacing: 1px;
+    text-transform: uppercase; color: var(--text-muted);
+    margin-bottom: 16px; padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .field-row {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+    margin-bottom: 14px;
+  }
+  .field-row.full { grid-template-columns: 1fr; }
+  .field-row.triple { grid-template-columns: 1fr 1fr 1fr; }
+
+  .field {
+    display: flex; flex-direction: column; gap: 6px;
+  }
+
+  label {
+    font-size: 12px; font-weight: 600; color: var(--text-muted);
+    letter-spacing: 0.3px;
+  }
+
+  label .required { color: var(--accent); margin-left: 3px; }
+
+  input[type="text"], input[type="password"], input[type="number"],
+  select, textarea {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 9px 12px;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    width: 100%;
+    outline: none;
+  }
+
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(233,84,32,0.15);
+  }
+
+  textarea { resize: vertical; min-height: 80px; }
+
+  select option { background: var(--surface); }
+
+  .toggle-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 0;
+  }
+  .toggle-label { font-size: 13px; font-weight: 600; }
+  .toggle-sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+  .toggle {
+    position: relative; width: 42px; height: 22px;
+    flex-shrink: 0;
+  }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .toggle-slider {
+    position: absolute; inset: 0;
+    background: var(--border); border-radius: 22px; cursor: pointer;
+    transition: 0.2s;
+  }
+  .toggle-slider::before {
+    content: ''; position: absolute;
+    width: 16px; height: 16px;
+    background: white; border-radius: 50%;
+    top: 3px; left: 3px; transition: 0.2s;
+  }
+  .toggle input:checked + .toggle-slider { background: var(--accent); }
+  .toggle input:checked + .toggle-slider::before { transform: translateX(20px); }
+
+  /* Dynamic list items */
+  .list-item {
+    display: grid; gap: 10px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+    margin-bottom: 10px;
+    position: relative;
+  }
+
+  .list-item-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 8px;
+  }
+
+  .list-item-title { font-size: 12px; font-weight: 700; color: var(--text-muted); }
+
+  .btn-remove {
+    background: rgba(248,81,73,0.1); color: var(--red);
+    border: 1px solid rgba(248,81,73,0.2); border-radius: 4px;
+    padding: 3px 8px; font-size: 11px; cursor: pointer; font-family: 'Syne', sans-serif;
+    transition: all 0.15s;
+  }
+  .btn-remove:hover { background: rgba(248,81,73,0.2); }
+
+  .btn-add {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 14px; border-radius: 6px;
+    border: 1px dashed var(--border); background: transparent;
+    color: var(--text-muted); cursor: pointer;
+    font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 600;
+    transition: all 0.15s; width: 100%; justify-content: center;
+    margin-top: 8px;
+  }
+  .btn-add:hover { border-color: var(--accent); color: var(--accent); background: rgba(233,84,32,0.05); }
+
+  /* YAML Preview */
+  .yaml-panel {
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+
+  .yaml-header {
+    padding: 0 16px;
+    height: 48px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--ubuntu-aubergine);
+  }
+
+  .yaml-title {
+    font-size: 12px; font-weight: 700; letter-spacing: 1px;
+    color: #c08070; text-transform: uppercase;
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  .yaml-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+
+  .yaml-actions { display: flex; gap: 6px; }
+
+  .yaml-output {
+    flex: 1; overflow-y: auto;
+    padding: 20px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    white-space: pre;
+    color: #e6edf3;
+  }
+
+  /* Syntax highlighting */
+  .y-key { color: var(--blue); }
+  .y-val { color: #a5d6ff; }
+  .y-str { color: #79c0ff; }
+  .y-num { color: var(--purple); }
+  .y-bool-true { color: var(--green); }
+  .y-bool-false { color: var(--red); }
+  .y-comment { color: var(--text-dim); font-style: italic; }
+  .y-dash { color: var(--accent); }
+  .y-section { color: var(--yellow); font-weight: 700; }
+
+  /* Tabs in yaml panel */
+  .yaml-tabs {
+    display: flex; gap: 0;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+
+  .yaml-tab {
+    padding: 10px 18px;
+    font-size: 12px; font-weight: 600;
+    color: var(--text-muted); cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.15s;
+  }
+  .yaml-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .yaml-tab:hover:not(.active) { color: var(--text); }
+
+  /* Raw edit */
+  .raw-editor {
+    flex: 1; display: none; flex-direction: column;
+  }
+  .raw-editor.active { display: flex; }
+  .raw-editor textarea {
+    flex: 1; border: none; border-radius: 0;
+    background: var(--bg); color: var(--text);
+    padding: 20px; font-size: 12px; line-height: 1.7;
+    resize: none;
+    box-shadow: none !important;
+  }
+  .raw-editor textarea:focus { box-shadow: none !important; border-color: transparent !important; }
+
+  .preview-wrap { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+  .preview-wrap.hidden { display: none; }
+
+  /* Scrollbars */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+
+  /* Support banner */
+  .support-bar {
+    background: var(--ubuntu-aubergine);
+    border-top: 1px solid #3a1a2e;
+    padding: 6px 20px;
+    font-size: 12px;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    color: #c08070;
+  }
+  .support-bar a {
+    color: var(--accent); font-weight: 700; text-decoration: none;
+  }
+  .support-bar a:hover { text-decoration: underline; }
+
+  /* Status bar */
+  .status-bar {
+    padding: 5px 20px; font-size: 11px; color: var(--text-dim);
+    background: var(--surface); border-top: 1px solid var(--border);
+    display: flex; gap: 16px; align-items: center;
+  }
+  .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); }
+
+  /* Notification */
+  .toast {
+    position: fixed; bottom: 24px; right: 24px;
+    background: var(--green); color: #0d1117;
+    padding: 10px 18px; border-radius: 8px;
+    font-size: 13px; font-weight: 700;
+    opacity: 0; transform: translateY(10px);
+    transition: all 0.25s; z-index: 999; pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+
+  /* File drop zone */
+  .drop-zone {
+    border: 2px dashed var(--border); border-radius: 8px;
+    padding: 24px; text-align: center;
+    color: var(--text-muted); font-size: 13px;
+    transition: all 0.2s; cursor: pointer; margin-bottom: 16px;
+  }
+  .drop-zone:hover, .drop-zone.dragover {
+    border-color: var(--accent); background: rgba(233,84,32,0.05); color: var(--accent);
+  }
+  .drop-zone .drop-icon { font-size: 28px; margin-bottom: 8px; }
+
+  /* Chip / tag */
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .chip {
+    display: flex; align-items: center; gap: 5px;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 20px; padding: 3px 10px; font-size: 12px;
+    font-family: 'JetBrains Mono', monospace; color: var(--blue);
+  }
+  .chip-del { cursor: pointer; color: var(--text-muted); font-size: 14px; }
+  .chip-del:hover { color: var(--red); }
+
+  /* Responsive hint */
+  @media (max-width: 1100px) {
+    .app-layout { grid-template-columns: 220px 1fr 340px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">⚙</div>
+    Ubuntu <span>Autoinstall</span>&nbsp;Editor
+  </div>
+  <div class="header-actions">
+    <label class="btn btn-ghost" style="cursor:pointer">
+      📂 Open YAML
+      <input type="file" accept=".yaml,.yml" id="fileInput" style="display:none">
+    </label>
+    <button class="btn btn-ghost" onclick="newFile()">✦ New</button>
+    <button class="btn btn-success" onclick="downloadYAML()">⬇ Download</button>
+    <button class="btn btn-primary" onclick="copyYAML()">⎘ Copy</button>
+  </div>
+</header>
+
+<div class="app-layout">
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-header">
+      Sections
+      <span id="sectionCount" style="color:var(--accent);font-size:12px">0/8</span>
+    </div>
+    <div class="sidebar-scroll">
+      <div class="section-group-label">Core</div>
+      <div class="section-item active" onclick="showSection('identity')" id="nav-identity">
+        <span class="icon">🏷</span> Identity
+      </div>
+      <div class="section-item" onclick="showSection('locale')" id="nav-locale">
+        <span class="icon">🌐</span> Locale & Keyboard
+      </div>
+      <div class="section-item" onclick="showSection('network')" id="nav-network">
+        <span class="icon">🔗</span> Network
+      </div>
+      <div class="section-item" onclick="showSection('storage')" id="nav-storage">
+        <span class="icon">💾</span> Storage
+      </div>
+
+      <div class="section-group-label" style="margin-top:8px">Security</div>
+      <div class="section-item" onclick="showSection('users')" id="nav-users">
+        <span class="icon">👤</span> Users & SSH
+      </div>
+      <div class="section-item" onclick="showSection('packages')" id="nav-packages">
+        <span class="icon">📦</span> Packages
+      </div>
+
+      <div class="section-group-label" style="margin-top:8px">Advanced</div>
+      <div class="section-item" onclick="showSection('latecommands')" id="nav-latecommands">
+        <span class="icon">⌨</span> Late Commands
+      </div>
+      <div class="section-item" onclick="showSection('misc')" id="nav-misc">
+        <span class="icon">⚙</span> Misc Options
+      </div>
+    </div>
+  </div>
+
+  <!-- Form Panel -->
+  <div class="form-panel" id="formPanel">
+
+    <!-- Identity -->
+    <div class="section-block active" id="sec-identity">
+      <div class="section-title">Identity</div>
+      <div class="section-desc">Basic system identity settings for the new installation.</div>
+
+      <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+        <div class="drop-icon">📄</div>
+        Drop an existing <strong>autoinstall.yaml</strong> here to load it, or click to browse
+      </div>
+
+      <div class="field-group">
+        <div class="field-group-title">System Identity</div>
+        <div class="field-row">
+          <div class="field">
+            <label>Hostname <span class="required">*</span></label>
+            <input type="text" id="hostname" placeholder="ubuntu-server" oninput="renderYAML()">
+          </div>
+          <div class="field">
+            <label>Ubuntu Version / Channel</label>
+            <select id="ubuntuVersion" onchange="renderYAML()">
+              <option value="">-- select --</option>
+              <option value="24.04 LTS">24.04 LTS (Noble Numbat)</option>
+              <option value="22.04 LTS">22.04 LTS (Jammy Jellyfish)</option>
+              <option value="20.04 LTS">20.04 LTS (Focal Fossa)</option>
+            </select>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Timezone</label>
+            <input type="text" id="timezone" placeholder="America/New_York" oninput="renderYAML()">
+          </div>
+          <div class="field">
+            <label>Refresh Install</label>
+            <select id="refreshInstall" onchange="renderYAML()">
+              <option value="">no</option>
+              <option value="yes">yes</option>
+              <option value="no">no</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Locale & Keyboard -->
+    <div class="section-block" id="sec-locale">
+      <div class="section-title">Locale & Keyboard</div>
+      <div class="section-desc">Language, locale, and keyboard layout configuration.</div>
+      <div class="field-group">
+        <div class="field-group-title">Language</div>
+        <div class="field-row">
+          <div class="field">
+            <label>Locale</label>
+            <input type="text" id="locale" placeholder="en_US.UTF-8" oninput="renderYAML()">
+          </div>
+          <div class="field">
+            <label>Keyboard Layout</label>
+            <input type="text" id="kbLayout" placeholder="us" oninput="renderYAML()">
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Keyboard Variant</label>
+            <input type="text" id="kbVariant" placeholder="" oninput="renderYAML()">
+          </div>
+          <div class="field">
+            <label>Keyboard Toggle</label>
+            <input type="text" id="kbToggle" placeholder="" oninput="renderYAML()">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Network -->
+    <div class="section-block" id="sec-network">
+      <div class="section-title">Network</div>
+      <div class="section-desc">Network interface configuration using netplan-style YAML.</div>
+      <div class="field-group">
+        <div class="field-group-title">Primary Interface</div>
+        <div class="field-row">
+          <div class="field">
+            <label>Interface Name</label>
+            <input type="text" id="netIface" placeholder="enp0s3" oninput="renderYAML()">
+          </div>
+          <div class="field">
+            <label>DHCP4</label>
+            <select id="netDhcp4" onchange="renderYAML()">
+              <option value="true">true</option>
+              <option value="false">false</option>
+            </select>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Static IP Address (CIDR)</label>
+            <input type="text" id="netStaticIP" placeholder="192.168.1.100/24" oninput="renderYAML()">
+          </div>
+          <div class="field">
+            <label>Gateway</label>
+            <input type="text" id="netGateway" placeholder="192.168.1.1" oninput="renderYAML()">
+          </div>
+        </div>
+        <div class="field-row full">
+          <div class="field">
+            <label>DNS Nameservers (comma-separated)</label>
+            <input type="text" id="netDns" placeholder="8.8.8.8, 8.8.4.4" oninput="renderYAML()">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Storage -->
+    <div class="section-block" id="sec-storage">
+      <div class="section-title">Storage</div>
+      <div class="section-desc">Disk partitioning and storage layout.</div>
+      <div class="field-group">
+        <div class="field-group-title">Storage Layout</div>
+        <div class="field-row">
+          <div class="field">
+            <label>Layout Type</label>
+            <select id="storageLayout" onchange="renderYAML()">
+              <option value="lvm">LVM (default)</option>
+              <option value="direct">Direct / No LVM</option>
+              <option value="zfs">ZFS</option>
+              <option value="custom">Custom</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Target Disk</label>
+            <input type="text" id="storageDisk" placeholder="/dev/sda" oninput="renderYAML()">
+          </div>
+        </div>
+        <div class="toggle-row">
+          <div>
+            <div class="toggle-label">Wipe Disk Before Install</div>
+            <div class="toggle-sub">Securely erase all data on the target disk</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="storageWipe" onchange="renderYAML()">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="toggle-row">
+          <div>
+            <div class="toggle-label">Swap on LVM</div>
+            <div class="toggle-sub">Create a swap logical volume</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="storageSwap" checked onchange="renderYAML()">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Users -->
+    <div class="section-block" id="sec-users">
+      <div class="section-title">Users & SSH</div>
+      <div class="section-desc">Create user accounts and configure SSH access.</div>
+
+      <div id="usersList"></div>
+      <button class="btn-add" onclick="addUser()">＋ Add User</button>
+
+      <div style="margin-top:24px"></div>
+
+      <div class="field-group">
+        <div class="field-group-title">SSH Configuration</div>
+        <div class="toggle-row">
+          <div>
+            <div class="toggle-label">Install OpenSSH Server</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="sshInstall" checked onchange="renderYAML()">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="toggle-row">
+          <div>
+            <div class="toggle-label">Allow Password Authentication</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="sshPwdAuth" checked onchange="renderYAML()">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="field-row full" style="margin-top:14px">
+          <div class="field">
+            <label>Authorized SSH Keys (one per line)</label>
+            <textarea id="sshKeys" placeholder="ssh-rsa AAAA...&#10;ssh-ed25519 AAAA..." rows="4" oninput="renderYAML()"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Packages -->
+    <div class="section-block" id="sec-packages">
+      <div class="section-title">Packages</div>
+      <div class="section-desc">Additional packages to install during setup.</div>
+      <div class="field-group">
+        <div class="field-group-title">Package Sources</div>
+        <div class="toggle-row">
+          <div>
+            <div class="toggle-label">Update Packages After Install</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="pkgUpdate" checked onchange="renderYAML()">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="toggle-row">
+          <div>
+            <div class="toggle-label">Upgrade Packages After Install</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="pkgUpgrade" onchange="renderYAML()">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+      <div class="field-group">
+        <div class="field-group-title">Packages to Install</div>
+        <div class="field-row full">
+          <div class="field">
+            <label>Add Package (press Enter)</label>
+            <input type="text" id="pkgInput" placeholder="e.g. curl, git, docker.io" onkeydown="handlePkgKey(event)">
+          </div>
+        </div>
+        <div class="chips" id="pkgChips"></div>
+      </div>
+
+      <div class="field-group">
+        <div class="field-group-title">Snaps to Install</div>
+        <div class="field-row full">
+          <div class="field">
+            <label>Add Snap (press Enter)</label>
+            <input type="text" id="snapInput" placeholder="e.g. microk8s, lxd" onkeydown="handleSnapKey(event)">
+          </div>
+        </div>
+        <div class="chips" id="snapChips"></div>
+      </div>
+    </div>
+
+    <!-- Late Commands -->
+    <div class="section-block" id="sec-latecommands">
+      <div class="section-title">Late Commands</div>
+      <div class="section-desc">Shell commands to run after installation completes (in target chroot).</div>
+      <div id="lateCommandsList"></div>
+      <button class="btn-add" onclick="addLateCmd()">＋ Add Command</button>
+
+      <div style="margin-top:24px"></div>
+      <div class="field-group">
+        <div class="field-group-title">Early Commands</div>
+        <div id="earlyCommandsList"></div>
+        <button class="btn-add" onclick="addEarlyCmd()">＋ Add Early Command</button>
+      </div>
+    </div>
+
+    <!-- Misc -->
+    <div class="section-block" id="sec-misc">
+      <div class="section-title">Misc Options</div>
+      <div class="section-desc">Miscellaneous autoinstall options and confirmation behavior.</div>
+      <div class="field-group">
+        <div class="field-group-title">Install Behavior</div>
+        <div class="toggle-row">
+          <div>
+            <div class="toggle-label">Interactive Sections</div>
+            <div class="toggle-sub">Pause on specific sections for manual input</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="interactive" onchange="renderYAML()">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="toggle-row">
+          <div>
+            <div class="toggle-label">Reboot After Install</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="reboot" checked onchange="renderYAML()">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="field-row" style="margin-top:14px">
+          <div class="field">
+            <label>Apt Mirror URL</label>
+            <input type="text" id="aptMirror" placeholder="http://archive.ubuntu.com/ubuntu" oninput="renderYAML()">
+          </div>
+          <div class="field">
+            <label>Install Source (channel)</label>
+            <input type="text" id="installSource" placeholder="ubuntu-server" oninput="renderYAML()">
+          </div>
+        </div>
+      </div>
+      <div class="field-group">
+        <div class="field-group-title">Custom YAML (appended verbatim)</div>
+        <div class="field-row full">
+          <div class="field">
+            <textarea id="customYaml" rows="8" placeholder="# Add any extra YAML here..." oninput="renderYAML()"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- YAML Preview Panel -->
+  <div class="yaml-panel">
+    <div class="yaml-header">
+      <div class="yaml-title"><div class="yaml-dot"></div> autoinstall.yaml</div>
+      <div class="yaml-actions">
+        <button class="btn btn-ghost" style="padding:4px 10px;font-size:11px" onclick="copyYAML()">Copy</button>
+      </div>
+    </div>
+    <div class="yaml-tabs">
+      <div class="yaml-tab active" onclick="switchTab('preview')">Preview</div>
+      <div class="yaml-tab" onclick="switchTab('raw')">Raw Edit</div>
+    </div>
+    <div class="preview-wrap" id="previewWrap">
+      <div class="yaml-output" id="yamlOutput"></div>
+    </div>
+    <div class="raw-editor" id="rawEditor">
+      <textarea id="rawTextarea" spellcheck="false" oninput="syncFromRaw()"></textarea>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── State ───────────────────────────────────────────────────────────
+let users = [];
+let packages = [];
+let snaps = [];
+let lateCmds = [];
+let earlyCmds = [];
+let userCount = 0;
+let lateCmdCount = 0;
+let earlyCmdCount = 0;
+let activeTab = 'preview';
+
+// ─── Navigation ──────────────────────────────────────────────────────
+function showSection(name) {
+  document.querySelectorAll('.section-block').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.section-item').forEach(i => i.classList.remove('active'));
+  document.getElementById('sec-' + name).classList.add('active');
+  document.getElementById('nav-' + name).classList.add('active');
+  renderYAML();
+}
+
+// ─── Tab switching ────────────────────────────────────────────────────
+function switchTab(tab) {
+  activeTab = tab;
+  document.querySelectorAll('.yaml-tab').forEach((t, i) => {
+    t.classList.toggle('active', (i === 0 && tab === 'preview') || (i === 1 && tab === 'raw'));
+  });
+  if (tab === 'raw') {
+    document.getElementById('previewWrap').classList.add('hidden');
+    document.getElementById('rawEditor').classList.add('active');
+    document.getElementById('rawTextarea').value = buildYAML();
+  } else {
+    document.getElementById('previewWrap').classList.remove('hidden');
+    document.getElementById('rawEditor').classList.remove('active');
+    renderYAML();
+  }
+}
+
+function syncFromRaw() {
+  // raw edit just keeps the text; on switch back to preview we don't overwrite
+}
+
+// ─── Users ────────────────────────────────────────────────────────────
+function addUser() {
+  const id = ++userCount;
+  users.push({ id });
+  renderUserItem(id);
+  renderYAML();
+}
+
+function renderUserItem(id) {
+  const el = document.createElement('div');
+  el.className = 'list-item';
+  el.id = 'user-' + id;
+  el.innerHTML = `
+    <div class="list-item-header">
+      <span class="list-item-title">User #${id}</span>
+      <button class="btn-remove" onclick="removeUser(${id})">✕ Remove</button>
+    </div>
+    <div class="field-row triple">
+      <div class="field"><label>Real Name</label><input type="text" id="u${id}-name" placeholder="John Doe" oninput="renderYAML()"></div>
+      <div class="field"><label>Username</label><input type="text" id="u${id}-login" placeholder="john" oninput="renderYAML()"></div>
+      <div class="field"><label>Password (hashed)</label><input type="text" id="u${id}-pw" placeholder="\$6\$..." oninput="renderYAML()"></div>
+    </div>
+    <div class="toggle-row">
+      <div><div class="toggle-label">Sudo Access</div></div>
+      <label class="toggle"><input type="checkbox" id="u${id}-sudo" checked onchange="renderYAML()"><span class="toggle-slider"></span></label>
+    </div>
+  `;
+  document.getElementById('usersList').appendChild(el);
+}
+
+function removeUser(id) {
+  users = users.filter(u => u.id !== id);
+  document.getElementById('user-' + id)?.remove();
+  renderYAML();
+}
+
+// ─── Commands ─────────────────────────────────────────────────────────
+function addLateCmd() {
+  const id = ++lateCmdCount;
+  lateCmds.push(id);
+  const el = document.createElement('div');
+  el.className = 'list-item'; el.id = 'lcmd-' + id;
+  el.innerHTML = `
+    <div class="list-item-header">
+      <span class="list-item-title">Command #${id}</span>
+      <button class="btn-remove" onclick="removeLateCmd(${id})">✕ Remove</button>
+    </div>
+    <div class="field-row full">
+      <div class="field">
+        <label>Shell Command</label>
+        <input type="text" id="lcmd-val-${id}" placeholder="curtin in-target -- apt install -y htop" oninput="renderYAML()">
+      </div>
+    </div>
+  `;
+  document.getElementById('lateCommandsList').appendChild(el);
+  renderYAML();
+}
+
+function removeLateCmd(id) {
+  lateCmds = lateCmds.filter(x => x !== id);
+  document.getElementById('lcmd-' + id)?.remove();
+  renderYAML();
+}
+
+function addEarlyCmd() {
+  const id = ++earlyCmdCount;
+  earlyCmds.push(id);
+  const el = document.createElement('div');
+  el.className = 'list-item'; el.id = 'ecmd-' + id;
+  el.innerHTML = `
+    <div class="list-item-header">
+      <span class="list-item-title">Early Command #${id}</span>
+      <button class="btn-remove" onclick="removeEarlyCmd(${id})">✕ Remove</button>
+    </div>
+    <div class="field-row full">
+      <div class="field">
+        <input type="text" id="ecmd-val-${id}" placeholder="echo 'starting install'" oninput="renderYAML()">
+      </div>
+    </div>
+  `;
+  document.getElementById('earlyCommandsList').appendChild(el);
+  renderYAML();
+}
+
+function removeEarlyCmd(id) {
+  earlyCmds = earlyCmds.filter(x => x !== id);
+  document.getElementById('ecmd-' + id)?.remove();
+  renderYAML();
+}
+
+// ─── Packages / Snaps ────────────────────────────────────────────────
+function handlePkgKey(e) {
+  if (e.key === 'Enter') {
+    const val = e.target.value.trim();
+    if (val && !packages.includes(val)) {
+      val.split(',').map(v => v.trim()).filter(Boolean).forEach(v => {
+        if (!packages.includes(v)) packages.push(v);
+      });
+      e.target.value = '';
+      renderChips('pkgChips', packages, 'pkg');
+      renderYAML();
+    }
+  }
+}
+
+function handleSnapKey(e) {
+  if (e.key === 'Enter') {
+    const val = e.target.value.trim();
+    if (val && !snaps.includes(val)) {
+      snaps.push(val);
+      e.target.value = '';
+      renderChips('snapChips', snaps, 'snap');
+      renderYAML();
+    }
+  }
+}
+
+function renderChips(containerId, arr, type) {
+  const c = document.getElementById(containerId);
+  c.innerHTML = arr.map((v, i) => `
+    <div class="chip">${v}<span class="chip-del" onclick="removeChip('${type}',${i})">×</span></div>
+  `).join('');
+}
+
+function removeChip(type, idx) {
+  if (type === 'pkg') { packages.splice(idx, 1); renderChips('pkgChips', packages, 'pkg'); }
+  else { snaps.splice(idx, 1); renderChips('snapChips', snaps, 'snap'); }
+  renderYAML();
+}
+
+// ─── YAML builder ────────────────────────────────────────────────────
+function v(id) { return (document.getElementById(id)?.value || '').trim(); }
+function chk(id) { return document.getElementById(id)?.checked || false; }
+
+function buildYAML() {
+  const lines = [];
+
+  lines.push('#cloud-config');
+  lines.push('autoinstall:');
+  lines.push('  version: 1');
+
+  // Identity
+  const hostname = v('hostname');
+  const tz = v('timezone');
+  if (hostname || tz) {
+    if (hostname) lines.push(`  hostname: ${hostname}`);
+    if (tz) lines.push(`  timezone: ${tz}`);
+  }
+
+  // Locale
+  const locale = v('locale');
+  if (locale) lines.push(`  locale: ${locale}`);
+
+  const kbLayout = v('kbLayout');
+  if (kbLayout) {
+    lines.push('  keyboard:');
+    lines.push(`    layout: ${kbLayout}`);
+    const kbVar = v('kbVariant');
+    const kbTog = v('kbToggle');
+    if (kbVar) lines.push(`    variant: ${kbVar}`);
+    if (kbTog) lines.push(`    toggle: ${kbTog}`);
+  }
+
+  // Network
+  const netIface = v('netIface');
+  const netDhcp4 = v('netDhcp4');
+  const netStatic = v('netStaticIP');
+  const netGw = v('netGateway');
+  const netDnsRaw = v('netDns');
+
+  if (netIface) {
+    lines.push('  network:');
+    lines.push('    network:');
+    lines.push('      version: 2');
+    lines.push('      ethernets:');
+    lines.push(`        ${netIface}:`);
+    lines.push(`          dhcp4: ${netDhcp4 === 'true'}`);
+    if (netDhcp4 === 'false' && netStatic) {
+      lines.push('          addresses:');
+      lines.push(`            - ${netStatic}`);
+    }
+    if (netGw) lines.push(`          gateway4: ${netGw}`);
+    if (netDnsRaw) {
+      const ns = netDnsRaw.split(',').map(s => s.trim()).filter(Boolean);
+      lines.push('          nameservers:');
+      lines.push(`            addresses: [${ns.join(', ')}]`);
+    }
+  }
+
+  // Storage
+  const storageLayout = v('storageLayout');
+  const disk = v('storageDisk');
+  const wipe = chk('storageWipe');
+  const swap = chk('storageSwap');
+
+  lines.push('  storage:');
+  if (storageLayout === 'custom') {
+    lines.push('    # Custom storage config - edit in Raw tab');
+    lines.push('    config: []');
+  } else {
+    lines.push('    layout:');
+    lines.push(`      name: ${storageLayout}`);
+    if (swap) lines.push('      match:');
+    if (disk) lines.push(`        path: ${disk}`);
+    if (wipe) lines.push('    grub:');
+  }
+
+  // Identity (user section / "identity" in autoinstall)
+  const realname = '', login = '', pw = '';
+  // Users
+  const userItems = users.map(u => u.id).filter(id => document.getElementById('u' + id + '-login'));
+  if (userItems.length > 0) {
+    lines.push('  user-data:');
+    lines.push('    users:');
+    userItems.forEach(id => {
+      const name = v(`u${id}-name`);
+      const login = v(`u${id}-login`);
+      const pw = v(`u${id}-pw`);
+      const sudo = chk(`u${id}-sudo`);
+      if (login) {
+        lines.push(`      - name: ${login}`);
+        if (name) lines.push(`        gecos: ${name}`);
+        if (pw) lines.push(`        passwd: '${pw}'`);
+        lines.push(`        lock-passwd: false`);
+        if (sudo) lines.push(`        sudo: ALL=(ALL) NOPASSWD:ALL`);
+        lines.push(`        shell: /bin/bash`);
+      }
+    });
+  }
+
+  // SSH
+  const sshInstall = chk('sshInstall');
+  const sshPwdAuth = chk('sshPwdAuth');
+  const sshKeys = v('sshKeys');
+
+  if (sshInstall) {
+    lines.push('  ssh:');
+    lines.push('    install-server: true');
+    if (!sshPwdAuth) lines.push('    allow-pw: false');
+    if (sshKeys) {
+      const keys = sshKeys.split('\n').map(k => k.trim()).filter(Boolean);
+      if (keys.length) {
+        lines.push('    authorized-keys:');
+        keys.forEach(k => lines.push(`      - ${k}`));
+      }
+    }
+  }
+
+  // Packages
+  const pkgUpdate = chk('pkgUpdate');
+  const pkgUpgrade = chk('pkgUpgrade');
+  if (packages.length || pkgUpdate || pkgUpgrade) {
+    lines.push('  packages:');
+    packages.forEach(p => lines.push(`    - ${p}`));
+    if (pkgUpdate) lines.push('  package_update: true');
+    if (pkgUpgrade) lines.push('  package_upgrade: true');
+  }
+
+  // Snaps
+  if (snaps.length) {
+    lines.push('  snaps:');
+    snaps.forEach(s => lines.push(`    - name: ${s}`));
+  }
+
+  // Apt
+  const aptMirror = v('aptMirror');
+  if (aptMirror) {
+    lines.push('  apt:');
+    lines.push('    primary:');
+    lines.push('      - arches: [amd64]');
+    lines.push(`        uri: ${aptMirror}`);
+  }
+
+  // Install source
+  const installSource = v('installSource');
+  if (installSource) {
+    lines.push('  source:');
+    lines.push(`    id: ${installSource}`);
+  }
+
+  // Early commands
+  if (earlyCmds.length > 0) {
+    const items = earlyCmds.filter(id => v(`ecmd-val-${id}`));
+    if (items.length) {
+      lines.push('  early-commands:');
+      items.forEach(id => lines.push(`    - ${v(`ecmd-val-${id}`)}`));
+    }
+  }
+
+  // Late commands
+  if (lateCmds.length > 0) {
+    const items = lateCmds.filter(id => v(`lcmd-val-${id}`));
+    if (items.length) {
+      lines.push('  late-commands:');
+      items.forEach(id => lines.push(`    - ${v(`lcmd-val-${id}`)}`));
+    }
+  }
+
+  // Misc
+  const reboot = chk('reboot');
+  if (reboot) {
+    lines.push('  shutdown: reboot');
+  }
+
+  // Custom yaml
+  const customYaml = v('customYaml');
+  if (customYaml) {
+    lines.push('');
+    lines.push('  # --- Custom YAML ---');
+    customYaml.split('\n').forEach(l => lines.push('  ' + l));
+  }
+
+  return lines.join('\n');
+}
+
+// ─── Syntax highlighting ──────────────────────────────────────────────
+function highlight(yaml) {
+  return yaml
+    .split('\n')
+    .map(line => {
+      if (line.startsWith('#')) return `<span class="y-comment">${esc(line)}</span>`;
+      const m = line.match(/^(\s*)([\w\-]+)(:)(.*)$/);
+      if (m) {
+        const indent = m[1];
+        const key = m[2];
+        const colon = m[3];
+        let rest = m[4];
+        // highlight values
+        rest = rest
+          .replace(/:\s*(true)(\s*#.*)?$/, ': <span class="y-bool-true">$1</span>$2')
+          .replace(/:\s*(false)(\s*#.*)?$/, ': <span class="y-bool-false">$1</span>$2')
+          .replace(/:\s*(\d+)(\s*#.*)?$/, ': <span class="y-num">$1</span>$2')
+          .replace(/:\s*('.*?')(\s*#.*)?$/, ': <span class="y-str">$1</span>$2')
+          .replace(/:\s*(".*?")(\s*#.*)?$/, ': <span class="y-str">$1</span>$2')
+          .replace(/:\s*([\w\-\/.@:]+)(\s*#.*)?$/, ': <span class="y-val">$1</span>$2');
+
+        const keyClass = indent.length <= 2 ? 'y-section' : 'y-key';
+        return `${indent}<span class="${keyClass}">${esc(key)}</span><span class="y-key">${colon}</span>${rest}`;
+      }
+      // list item
+      if (/^\s*-\s/.test(line)) {
+        return line.replace(/^(\s*)(-)(\s)(.*)$/, (_, sp, dash, space, rest) =>
+          `${sp}<span class="y-dash">${dash}</span>${space}${esc(rest)}`
+        );
+      }
+      return esc(line);
+    })
+    .join('\n');
+}
+
+function esc(s) {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function renderYAML() {
+  if (activeTab === 'raw') return;
+  const yaml = buildYAML();
+  document.getElementById('yamlOutput').innerHTML = highlight(yaml);
+  updateStatus(yaml);
+}
+
+function updateStatus(yaml) {
+  const lines = yaml.split('\n').length;
+  const el = document.querySelector('.status-bar');
+  if (el) el.querySelector('.status-text').textContent = `${lines} lines · autoinstall.yaml`;
+}
+
+// ─── File I/O ─────────────────────────────────────────────────────────
+document.getElementById('fileInput').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const r = new FileReader();
+  r.onload = evt => loadYAMLText(evt.target.result);
+  r.readAsText(file);
+});
+
+// drag/drop
+const dz = document.getElementById('dropZone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragover'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
+dz.addEventListener('drop', e => {
+  e.preventDefault(); dz.classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file) { const r = new FileReader(); r.onload = ev => loadYAMLText(ev.target.result); r.readAsText(file); }
+});
+
+function loadYAMLText(text) {
+  // Parse basic fields via regex
+  const get = (k) => { const m = text.match(new RegExp(`^\\s*${k}:\\s*(.+)$`, 'm')); return m ? m[1].trim().replace(/['"]/g,'') : ''; };
+
+  document.getElementById('hostname').value = get('hostname');
+  document.getElementById('timezone').value = get('timezone');
+  document.getElementById('locale').value = get('locale');
+
+  const kbM = text.match(/keyboard:\s*\n\s+layout:\s*(\S+)/);
+  if (kbM) document.getElementById('kbLayout').value = kbM[1];
+
+  const ifaceM = text.match(/ethernets:\s*\n\s+(\S+?):/);
+  if (ifaceM) document.getElementById('netIface').value = ifaceM[1];
+
+  const dhcpM = text.match(/dhcp4:\s*(true|false)/);
+  if (dhcpM) document.getElementById('netDhcp4').value = dhcpM[1];
+
+  // Load packages
+  const pkgSection = text.match(/^  packages:\s*\n((?:    - .+\n?)*)/m);
+  if (pkgSection) {
+    packages = pkgSection[1].match(/- (.+)/g)?.map(x => x.replace('- ','').trim()) || [];
+    renderChips('pkgChips', packages, 'pkg');
+  }
+
+  // Put full text in raw edit
+  document.getElementById('rawTextarea').value = text;
+
+  showToast('✓ YAML loaded');
+  renderYAML();
+}
+
+function newFile() {
+  if (!confirm('Clear all fields and start a new file?')) return;
+  document.querySelectorAll('input[type="text"], input[type="password"], textarea').forEach(el => el.value = '');
+  document.querySelectorAll('input[type="checkbox"]').forEach(el => { el.checked = ['sshInstall','sshPwdAuth','pkgUpdate','storageSwap','reboot'].includes(el.id); });
+  packages = []; snaps = []; users = []; lateCmds = []; earlyCmds = [];
+  renderChips('pkgChips', packages, 'pkg');
+  renderChips('snapChips', snaps, 'snap');
+  document.getElementById('usersList').innerHTML = '';
+  document.getElementById('lateCommandsList').innerHTML = '';
+  document.getElementById('earlyCommandsList').innerHTML = '';
+  userCount = lateCmdCount = earlyCmdCount = 0;
+  renderYAML();
+}
+
+function downloadYAML() {
+  const yaml = activeTab === 'raw'
+    ? document.getElementById('rawTextarea').value
+    : buildYAML();
+  const blob = new Blob([yaml], { type: 'text/yaml' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'autoinstall.yaml';
+  a.click();
+  showToast('⬇ Downloaded autoinstall.yaml');
+}
+
+function copyYAML() {
+  const yaml = activeTab === 'raw'
+    ? document.getElementById('rawTextarea').value
+    : buildYAML();
+  navigator.clipboard.writeText(yaml).then(() => showToast('⎘ Copied to clipboard!'));
+}
+
+// ─── Toast ────────────────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// ─── Status bar ───────────────────────────────────────────────────────
+document.body.insertAdjacentHTML('beforeend', `
+  <div class="support-bar">
+    💛 If you find this tool useful, consider supporting the project:
+    <a href="https://onandasmilee.com?j4PmO=1248945" target="_blank" rel="noopener noreferrer">Support this project. Click this Ad-Link and visit the website.</a>
+  </div>
+  <div class="status-bar">
+    <div class="status-dot"></div>
+    <span class="status-text">Ready</span>
+    <span style="margin-left:auto;color:var(--accent)">Ubuntu Autoinstall Editor</span>
+  </div>
+`);
+
+// ─── Init ─────────────────────────────────────────────────────────────
+document.getElementById('hostname').value = 'ubuntu-server';
+document.getElementById('locale').value = 'en_US.UTF-8';
+document.getElementById('kbLayout').value = 'us';
+document.getElementById('netIface').value = 'enp0s3';
+document.getElementById('netDhcp4').value = 'true';
+renderYAML();
+</script>
+</body>
+</html>
