@@ -132,7 +132,7 @@ MIT — see [LICENSE](LICENSE) for details.
 
 If you find this tool useful, consider supporting the project:
 
-👉 **[Support this project - Visit this Ad-Link](https://onandasmilee.com?j4PmO=1248945)** ← _(add your link here)_
+👉 **[Support this project - Visit this Ad-Link](https://onandasmilee.com?j4PmO=1248945)** 
 
 ---
 
